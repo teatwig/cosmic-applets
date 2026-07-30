@@ -621,20 +621,29 @@ impl cosmic::Application for Audio {
             .icon_button(self.output_icon_name())
             .on_press_down(Message::TogglePopup);
 
-        const WHEEL_STEP: f32 = 5.0; // 5% per wheel event
-        let btn = crate::mouse_area::MouseArea::new(btn).on_mouse_wheel(|delta| {
-            let scroll_vector = match delta {
-                iced::mouse::ScrollDelta::Lines { y, .. } => y.signum() * WHEEL_STEP, // -1/0/1
-                iced::mouse::ScrollDelta::Pixels { y, .. } => y.signum(),             // -1/0/1
-            };
-            if scroll_vector == 0.0 {
-                return Message::Ignore;
-            }
+        let next_sink = self
+            .model
+            .sinks
+            .active()
+            .map(|pos| (pos + 1) % self.model.sinks.sorted_display.len())
+            .unwrap_or_default();
 
-            let new_volume = (self.model.active_sink.volume as f64 + (scroll_vector as f64))
-                .clamp(0.0, self.max_sink_volume as f64);
-            Message::SetSinkVolume(new_volume as u32)
-        });
+        const WHEEL_STEP: f32 = 5.0; // 5% per wheel event
+        let btn = crate::mouse_area::MouseArea::new(btn)
+            .on_mouse_wheel(|delta| {
+                let scroll_vector = match delta {
+                    iced::mouse::ScrollDelta::Lines { y, .. } => y.signum() * WHEEL_STEP, // -1/0/1
+                    iced::mouse::ScrollDelta::Pixels { y, .. } => y.signum(),             // -1/0/1
+                };
+                if scroll_vector == 0.0 {
+                    return Message::Ignore;
+                }
+
+                let new_volume = (self.model.active_sink.volume as f64 + (scroll_vector as f64))
+                    .clamp(0.0, self.max_sink_volume as f64);
+                Message::SetSinkVolume(new_volume as u32)
+            })
+            .on_middle_press(Message::SetDefaultSink(next_sink));
 
         let mut has_playback_buttons = false;
         let playback_buttons = (!self.core.applet.suggested_bounds.as_ref().is_some_and(|c| {
