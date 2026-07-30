@@ -26,9 +26,7 @@ use cosmic::{
     },
     surface, theme,
     widget::{
-        Row, button, container, divider, icon,
-        rectangle_tracker::{RectangleTracker, RectangleUpdate, rectangle_tracker_subscription},
-        space, text, toggler,
+        Row, button, container, divider, icon, mouse_area, rectangle_tracker::{RectangleTracker, RectangleUpdate, rectangle_tracker_subscription}, space, text, toggler
     },
 };
 use cosmic_settings_audio_client::{self as audio_client, CosmicAudioProxy};
@@ -675,8 +673,15 @@ impl cosmic::Application for Audio {
             .icon_button(self.output_icon_name())
             .on_press_down(Message::TogglePopup);
 
+        let next_sink = self
+            .model
+            .sinks
+            .active()
+            .map(|pos| (pos + 1) % self.model.sinks.sorted_display.len())
+            .unwrap_or_default();
+
         const WHEEL_STEP: f32 = 5.0; // 5% per wheel event
-        let btn = crate::mouse_area::MouseArea::new(btn).on_mouse_wheel(|delta| {
+        let btn = btn.apply(mouse_area).on_scroll(|delta| {
             let scroll_vector = match delta {
                 iced::mouse::ScrollDelta::Lines { y, .. } => y.signum() * WHEEL_STEP, // -1/0/1
                 iced::mouse::ScrollDelta::Pixels { y, .. } => y.signum() * WHEEL_STEP, // -1/0/1
@@ -690,6 +695,7 @@ impl cosmic::Application for Audio {
                 .clamp(0.0, self.max_sink_volume as f64);
             Message::SetSinkVolumeScroll(new_volume as u32)
         });
+        let btn = btn.on_middle_press(Message::SetDefaultSink(next_sink));
 
         let mut has_playback_buttons = false;
         let playback_buttons = (!self.core.applet.suggested_bounds.as_ref().is_some_and(|c| {
