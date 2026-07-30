@@ -94,8 +94,16 @@ impl Audio {
     fn output_icon_name(&self) -> &'static str {
         let volume = self.model.active_sink.volume;
         let mute = self.model.active_sink.mute;
+        let active_sink: &str = self
+            .model
+            .sinks
+            .active()
+            .map(|pos| self.model.sinks.sorted_display[pos].as_ref())
+            .unwrap_or_default();
         if mute || volume == 0 {
             "audio-volume-muted-symbolic"
+        } else if active_sink.contains("QUAD-CAPTURE") {
+            "audio-headphones-symbolic"
         } else if volume < 33 {
             "audio-volume-low-symbolic"
         } else if volume < 66 {
