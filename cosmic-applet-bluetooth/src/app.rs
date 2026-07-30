@@ -11,7 +11,7 @@ use cosmic::{
 };
 
 use cosmic::{
-    Element, Task,
+    Apply, Element, Task,
     applet::{menu_button, padded_control},
     cosmic_theme::Spacing,
     iced::core::window,
@@ -21,7 +21,7 @@ use cosmic::{
         widget::{Column, column, container, row},
     },
     theme,
-    widget::{button, divider, icon, indeterminate_circular, scrollable, text},
+    widget::{button, divider, icon, indeterminate_circular, mouse_area, scrollable, text},
 };
 use futures::FutureExt;
 use std::{collections::HashMap, sync::LazyLock, time::Duration};
@@ -317,6 +317,10 @@ impl cosmic::Application for CosmicBluetoothApplet {
             .applet
             .icon_button(&self.icon_name)
             .on_press_down(Message::TogglePopup)
+            .apply(mouse_area)
+            .on_middle_press(Message::ToggleBluetooth(
+                !self.bluer_state.bluetooth_enabled,
+            ))
             .into()
     }
 
